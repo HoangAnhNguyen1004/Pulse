@@ -36,7 +36,7 @@ const lastMessageSchema = new mongoose.Schema(
         },
         senderId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "user",
+            ref: "User",
         },
         createdAt: {
             type: Date,
