@@ -1,5 +1,6 @@
 import type { Socket } from "socket.io-client";
 import type { Conversation, Message } from "./chat";
+import type { ChatTheme } from "@/lib/chatThemes";
 import type { Friend, FriendRequest, User } from "./user";
 
 export interface AuthState {
@@ -62,6 +63,9 @@ export interface ChatState {
     addMessage: (message: Message) => Promise<void>;
     // update convo
     updateConversation: (conversation: Partial<Conversation> & Pick<Conversation, "_id">) => void;
+    updateConversationTheme: (conversationId: string, theme: ChatTheme) => Promise<void>;
+    toggleMuteConversation: (conversationId: string) => Promise<boolean>;
+    deleteConversation: (conversationId: string) => Promise<void>;
     markAsSeen: () => Promise<void>;
     addConvo: (convo: Conversation) => void;
     createConversation: (
@@ -93,4 +97,6 @@ export interface FriendState {
 
 export interface UserState {
     updateAvatarUrl: (formData: FormData) => Promise<void>;
+    updateProfile: (profile: Pick<User, "displayName" | "email"> & Pick<Partial<User>, "phone" | "bio">) => Promise<void>;
+    changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }

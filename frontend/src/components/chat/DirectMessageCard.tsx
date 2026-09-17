@@ -20,7 +20,9 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
     if (!otherUser) return null;
 
     const unreadCount = convo.unreadCounts[user._id];
-    const lastMessage = convo.lastMessage?.content ?? "";
+    const lastMessage =
+        convo.lastMessage?.content ||
+        (convo.lastMessage?.imgUrl ? "📷 [Hình ảnh]" : "");
 
     const handleSelectConversation = async (id: string) => {
         setActiveConversation(id);
@@ -41,6 +43,7 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
             isActive={activeConversationId === convo._id}
             onSelect={handleSelectConversation}
             unreadCount={unreadCount}
+            isMuted={convo.isMuted}
             leftSection={
                 <>
                     <UserAvatar

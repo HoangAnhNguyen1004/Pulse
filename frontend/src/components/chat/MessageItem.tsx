@@ -68,14 +68,42 @@ const MessageItem = ({
                         message.isOwn ? "items-end" : "items-start"
                     )}
                 >
-                    <Card
-                        className={cn(
-                            "p-3",
-                            message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
-                        )}
-                    >
-                        <p className="text-sm leading-relaxed break-words">{message.content}</p>
-                    </Card>
+                    {message.imgUrl ? (
+                        <div
+                            className={cn(
+                                "overflow-hidden rounded-2xl shadow-sm",
+                                message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
+                            )}
+                        >
+                            <a
+                                href={message.imgUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block overflow-hidden focus:outline-none"
+                            >
+                                <img
+                                    src={message.imgUrl}
+                                    alt="Hình ảnh đính kèm"
+                                    loading="lazy"
+                                    className="max-h-72 w-auto max-w-full rounded-t-2xl object-cover hover:opacity-95 transition cursor-pointer"
+                                />
+                            </a>
+                            {message.content && (
+                                <p className="p-3 text-sm leading-relaxed break-words">
+                                    {message.content}
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <Card
+                            className={cn(
+                                "p-3",
+                                message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
+                            )}
+                        >
+                            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+                        </Card>
+                    )}
 
                     {/* seen/ delivered */}
                     {message.isOwn && message._id === selectedConvo.lastMessage?._id && (

@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type { ConversationResponse, Message } from "@/types/chat";
+import type { ChatTheme } from "@/lib/chatThemes";
 
 interface FetchMessageProps {
     messages: Message[];
@@ -54,6 +55,33 @@ export const chatService = {
     async markAsSeen(conversationId: string) {
         const res = await api.patch(`/conversations/${conversationId}/seen`);
         return res.data;
+    },
+
+    async updateConversationTheme(conversationId: string, backgroundTheme: ChatTheme) {
+        const res = await api.patch(`/conversations/${conversationId}/theme`, {
+            backgroundTheme,
+        });
+        return res.data.conversation;
+    },
+
+    async toggleMuteConversation(conversationId: string): Promise<boolean> {
+        const res = await api.patch(`/conversations/${conversationId}/mute`);
+        return res.data.isMuted;
+    },
+
+    async deleteConversation(conversationId: string): Promise<void> {
+        await api.delete(`/conversations/${conversationId}`);
+    },
+
+    async uploadImage(file: File): Promise<string> {
+        const formData = new FormData();
+        formData.append("image", file);
+        const res = await api.post("/messages/upload", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
+        return res.data.imgUrl;
     },
 
     async createConversation(

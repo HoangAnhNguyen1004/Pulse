@@ -1,3 +1,5 @@
+import type { ChatTheme } from "@/lib/chatThemes";
+
 export interface Participant {
     _id: string;
     displayName: string;
@@ -18,11 +20,12 @@ export interface Group {
 
 export interface LastMessage {
     _id: string;
-    content: string;
+    content: string | null;
     createdAt: string;
+    imgUrl?: string | null;
     sender: {
         _id: string;
-        displayName: string;
+        displayName?: string;
         avatarUrl?: string | null;
     };
 }
@@ -36,6 +39,8 @@ export interface Conversation {
     seenBy: SeenUser[];
     lastMessage: LastMessage | null;
     unreadCounts: Record<string, number>; // key = userId, value = unread count
+    backgroundTheme?: ChatTheme;
+    isMuted?: boolean;
     createdAt: string;
     updatedAt: string;
 }

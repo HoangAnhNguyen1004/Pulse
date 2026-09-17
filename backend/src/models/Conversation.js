@@ -85,6 +85,23 @@ const conversationSchema = new mongoose.Schema({
         of: Number,
         default: {},
     },
+    backgroundTheme: {
+        type: String,
+        enum: ["default", "pink-hearts", "blue-clouds", "green-leaves"],
+        default: "default",
+    },
+    mutedBy: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        },
+    ],
+    deletedBy: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        },
+    ],
 }, {
     timestamps: true,
 }

@@ -38,6 +38,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
             const lastMessage = {
                 _id: conversation.lastMessage._id,
                 content: conversation.lastMessage.content,
+                imgUrl: conversation.lastMessage.imgUrl,
                 createdAt: conversation.lastMessage.createdAt,
                 sender: {
                     _id: conversation.lastMessage.senderId,
@@ -76,6 +77,17 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         socket.on("new-group", (conversation) => {
             useChatStore.getState().addConvo(conversation);
             socket.emit("join-conversation", conversation._id);
+        });
+
+        // conversation deleted
+        socket.on("conversation-deleted", ({ conversationId }) => {
+            useChatStore.setState((state) => ({
+                conversations: state.conversations.filter((c) => c._id !== conversationId),
+                activeConversationId:
+                    state.activeConversationId === conversationId
+                        ? null
+                        : state.activeConversationId,
+            }));
         });
     },
     disconnectSocket: () => {

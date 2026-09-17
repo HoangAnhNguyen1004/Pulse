@@ -157,6 +157,47 @@ export const useChatStore = create<ChatState>()(
                     ),
                 }));
             },
+            updateConversationTheme: async (conversationId, theme) => {
+                try {
+                    const conversation = await chatService.updateConversationTheme(
+                        conversationId,
+                        theme
+                    );
+                    get().updateConversation(conversation);
+                } catch (error) {
+                    console.error("Lỗi khi cập nhật hình nền cuộc trò chuyện", error);
+                    throw error;
+                }
+            },
+            toggleMuteConversation: async (conversationId) => {
+                try {
+                    const isMuted = await chatService.toggleMuteConversation(conversationId);
+                    set((state) => ({
+                        conversations: state.conversations.map((c) =>
+                            c._id === conversationId ? { ...c, isMuted } : c
+                        ),
+                    }));
+                    return isMuted;
+                } catch (error) {
+                    console.error("Lỗi khi bật/tắt thông báo cuộc trò chuyện", error);
+                    throw error;
+                }
+            },
+            deleteConversation: async (conversationId) => {
+                try {
+                    await chatService.deleteConversation(conversationId);
+                    set((state) => ({
+                        conversations: state.conversations.filter((c) => c._id !== conversationId),
+                        activeConversationId:
+                            state.activeConversationId === conversationId
+                                ? null
+                                : state.activeConversationId,
+                    }));
+                } catch (error) {
+                    console.error("Lỗi khi xoá cuộc trò chuyện", error);
+                    throw error;
+                }
+            },
             markAsSeen: async () => {
                 try {
                     const { user } = useAuthStore.getState();

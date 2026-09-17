@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";
@@ -99,6 +100,7 @@ export const getConversations = async (req, res) => {
         const userId = req.user._id;
         const conversations = await Conversation.find({
             "participants.userId": userId,
+            deletedBy: { $ne: userId },
         })
             .sort({ lastMessageAt: -1, updatedAt: -1 })
             .populate({
@@ -122,10 +124,15 @@ export const getConversations = async (req, res) => {
                 joinedAt: p.joinedAt,
             }));
 
+            const isMuted = (convo.mutedBy || []).some(
+                (id) => id.toString() === userId.toString()
+            );
+
             return {
                 ...convo.toObject(),
                 unreadCounts: convo.unreadCounts || {},
                 participants,
+                isMuted,
             };
         });
 
@@ -237,5 +244,159 @@ export const markAsSeen = async (req, res) => {
     } catch (error) {
         console.error("Lỗi khi mark as seen", error);
         return res.status(500).json({ message: "Lỗi hệ thống" });
+    }
+};
+
+export const updateConversationTheme = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { backgroundTheme } = req.body;
+        const allowedThemes = ["default", "pink-hearts", "blue-clouds", "green-leaves"];
+
+        if (!allowedThemes.includes(backgroundTheme)) {
+            return res.status(400).json({ message: "Hình nền không hợp lệ" });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+            return res.status(400).json({ message: "ID cuộc trò chuyện không hợp lệ" });
+        }
+
+        const conversation = await Conversation.findOne({
+            _id: conversationId,
+            "participants.userId": req.user._id,
+        });
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+        }
+
+        conversation.backgroundTheme = backgroundTheme;
+        await conversation.save();
+
+        const updatedConversation = {
+            _id: conversation._id.toString(),
+            backgroundTheme: conversation.backgroundTheme,
+        };
+        io.to(conversationId).emit("conversation-theme-updated", updatedConversation);
+
+        return res.status(200).json({ conversation: updatedConversation });
+    } catch (error) {
+        console.error("Lỗi khi cập nhật hình nền cuộc trò chuyện", error);
+        return res.status(500).json({ message: "Không thể cập nhật hình nền" });
+    }
+};
+
+export const toggleMuteConversation = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+            return res.status(400).json({ message: "ID cuộc trò chuyện không hợp lệ" });
+        }
+
+        const conversation = await Conversation.findOne({
+            _id: conversationId,
+            "participants.userId": userId,
+        });
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+        }
+
+        const userIdStr = userId.toString();
+        const isCurrentlyMuted = (conversation.mutedBy || []).some(
+            (id) => id.toString() === userIdStr
+        );
+
+        if (isCurrentlyMuted) {
+            conversation.mutedBy = (conversation.mutedBy || []).filter(
+                (id) => id.toString() !== userIdStr
+            );
+        } else {
+            if (!conversation.mutedBy) conversation.mutedBy = [];
+            conversation.mutedBy.push(userId);
+        }
+
+        await conversation.save();
+
+        const isMuted = !isCurrentlyMuted;
+
+        return res.status(200).json({
+            conversationId: conversation._id.toString(),
+            isMuted,
+            message: isMuted ? "Đã tắt thông báo" : "Đã bật thông báo",
+        });
+    } catch (error) {
+        console.error("Lỗi khi bật/tắt thông báo cuộc trò chuyện", error);
+        return res.status(500).json({ message: "Không thể thay đổi trạng thái thông báo" });
+    }
+};
+
+export const deleteConversation = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const userId = req.user._id;
+
+        if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+            return res.status(400).json({ message: "ID cuộc trò chuyện không hợp lệ" });
+        }
+
+        const conversation = await Conversation.findOne({
+            _id: conversationId,
+            "participants.userId": userId,
+        });
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+        }
+
+        const userIdStr = userId.toString();
+
+        // If it's a group chat and the current user is the creator -> delete group entirely
+        if (
+            conversation.type === "group" &&
+            conversation.group?.createdBy?.toString() === userIdStr
+        ) {
+            await Message.deleteMany({ conversationId: conversation._id });
+            await Conversation.findByIdAndDelete(conversation._id);
+
+            io.to(conversationId).emit("conversation-deleted", {
+                conversationId: conversation._id.toString(),
+                forAll: true,
+            });
+
+            return res.status(200).json({
+                conversationId: conversation._id.toString(),
+                message: "Đã xoá nhóm trò chuyện thành công",
+            });
+        }
+
+        // Direct conversation or regular group member -> add user to deletedBy
+        if (!conversation.deletedBy) conversation.deletedBy = [];
+        if (!conversation.deletedBy.some((id) => id.toString() === userIdStr)) {
+            conversation.deletedBy.push(userId);
+        }
+
+        // Check if all participants deleted the conversation
+        const participantUserIds = conversation.participants.map((p) => p.userId.toString());
+        const allDeleted = participantUserIds.every((pId) =>
+            conversation.deletedBy.some((dId) => dId.toString() === pId)
+        );
+
+        if (allDeleted) {
+            await Message.deleteMany({ conversationId: conversation._id });
+            await Conversation.findByIdAndDelete(conversation._id);
+        } else {
+            await conversation.save();
+        }
+
+        return res.status(200).json({
+            conversationId: conversation._id.toString(),
+            message: "Đã xoá cuộc trò chuyện thành công",
+        });
+    } catch (error) {
+        console.error("Lỗi khi xoá cuộc trò chuyện", error);
+        return res.status(500).json({ message: "Không thể xoá cuộc trò chuyện" });
     }
 };
