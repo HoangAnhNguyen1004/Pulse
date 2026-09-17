@@ -26,9 +26,9 @@ app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 
 // CLOUDINARY Configuration
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+    cloud_name: 'y8jeo8rm',
+    api_key: '868149431332756',
+    api_secret: 'A1hpFinRv70_Fqf3owC3YZL5Wfg' // Click 'View API Keys' above to copy your API secret
 });
 
 // swagger

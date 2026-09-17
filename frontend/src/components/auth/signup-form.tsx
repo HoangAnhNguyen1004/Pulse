@@ -1,219 +1,200 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import {z} from 'zod';
-import {useForm} from 'react-hook-form';
-import {zodResolver} from '@hookform/resolvers/zod'
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Label } from "../ui/label";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useNavigate } from "react-router";
+
 const signUpSchema = z.object({
-  firstname: z.string().min(1, 'Tên bắt buộc phải có'),
-  lastname: z.string().min(1, 'Họ bắt buộc phải có'),
-  username: z.string().min(3, 'Tên đăng nhập phải có ít nhất 3 kí tự'),
+  firstname: z.string().min(1, "Tên bắt buộc phải có"),
+  lastname: z.string().min(1, "Họ bắt buộc phải có"),
+  username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
   email: z.email("Email không hợp lệ"),
-  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 kí tự")
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
 });
 
-type SignUpFormValues = z.infer<typeof signUpSchema>
+type SignUpFormValues = z.infer<typeof signUpSchema>;
 
-export function SignupForm({className,...props}: React.ComponentProps<"div">) {
-
-  const {signUp} = useAuthStore();
+export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
+  const { signUp } = useAuthStore();
   const navigate = useNavigate();
-  const {register, handleSubmit, formState: {errors, isSubmitting}} = useForm<SignUpFormValues> ({
-    resolver: zodResolver(signUpSchema)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
   });
 
   const onSubmit = async (data: SignUpFormValues) => {
-    const {firstname, lastname, username, email, password} = data;
-    
-    //call backend for signup
+    const { firstname, lastname, username, email, password } = data;
+
+    // gọi backend để signup
     await signUp(username, password, email, firstname, lastname);
 
     navigate("/signin");
-
   };
 
-
-
   return (
-    <div className={cn("w-full", className)} {...props}>
-      <Card className="overflow-hidden border-0 bg-card/80 shadow-2xl backdrop-blur-xl">
-        <CardContent className="grid min-h-[700px] p-0 lg:grid-cols-2">
+    <div
+      className={cn("flex flex-col gap-6", className)}
+      {...props}
+    >
+      <Card className="overflow-hidden p-0 border-border">
+        <CardContent className="grid p-0 md:grid-cols-2">
+          <form
+            className="p-6 md:p-8"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <div className="flex flex-col gap-6">
+              {/* header - logo */}
+              <div className="flex flex-col items-center text-center gap-2">
+                <a
+                  href="/"
+                  className="mx-auto block w-fit text-center"
+                >
+                  <img
+                    src="/logo.svg"
+                    alt="logo"
+                  />
+                </a>
 
-          {/* LEFT */}
-          <div className="flex flex-col justify-center p-8 md:p-12">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold tracking-tight">
-                Create Account
-              </h1>
+                <h1 className="text-2xl font-bold">Tạo tài khoản Pulse</h1>
+                <p className="text-muted-foreground text-balance">
+                  Chào mừng bạn! Hãy đăng ký để bắt đầu!
+                </p>
+              </div>
 
-              <p className="mt-3 text-muted-foreground">
-                Join Pulse and start chatting with your friends.
-              </p>
-            </div>
-
-            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-
-              {/* First + Last Name */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* họ & tên */}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">
+                  <Label
+                    htmlFor="lastname"
+                    className="block text-sm"
+                  >
                     Họ
-                  </label>
-
+                  </Label>
                   <Input
                     type="text"
                     id="lastname"
-                    placeholder="Nguyễn"
-                    className="h-11 rounded-xl border-border/50 bg-background/50"
                     {...register("lastname")}
                   />
 
                   {errors.lastname && (
-                    <p className="text-destructive text-sm">
-                      {errors.lastname.message}
-                    </p>
+                    <p className="error-message">{errors.lastname.message}</p>
                   )}
-
-
                 </div>
-
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">
+                  <Label
+                    htmlFor="fistname"
+                    className="block text-sm"
+                  >
                     Tên
-                  </label>
-
+                  </Label>
                   <Input
                     type="text"
                     id="firstname"
-                    placeholder="Văn A"
-                    className="h-11 rounded-xl border-border/50 bg-background/50"
                     {...register("firstname")}
                   />
-
                   {errors.firstname && (
-                  <p className="text-destructive text-sm">
-                    {errors.firstname.message}
-                  </p>
+                    <p className="error-message">{errors.firstname.message}</p>
                   )}
-                  
                 </div>
               </div>
 
-              {/* Username */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+              {/* username */}
+              <div className="flex flex-col gap-3">
+                <Label
+                  htmlFor="username"
+                  className="block text-sm"
+                >
                   Tên đăng nhập
-                </label>
-
+                </Label>
                 <Input
                   type="text"
+                  id="username"
                   placeholder="moji"
-                  id = "username"
-                  className="h-11 rounded-xl border-border/50 bg-background/50"
                   {...register("username")}
                 />
-
                 {errors.username && (
-                <p className="text-destructive text-sm">
-                  {errors.username.message}
-                </p>
+                  <p className="error-message">{errors.username.message}</p>
                 )}
-
-
               </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+              {/* email */}
+              <div className="flex flex-col gap-3">
+                <Label
+                  htmlFor="email"
+                  className="block text-sm"
+                >
                   Email
-                </label>
-
+                </Label>
                 <Input
                   type="email"
-                  id = "email"
-                  placeholder="m@example.com"
-                  className="h-11 rounded-xl border-border/50 bg-background/50"
+                  id="email"
+                  placeholder="m@gmail.com"
                   {...register("email")}
                 />
-
                 {errors.email && (
-                <p className="text-destructive text-sm">
-                  {errors.email.message}
-                </p>
+                  <p className="error-message">{errors.email.message}</p>
                 )}
               </div>
 
-              {/* Password */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+              {/* password */}
+              <div className="flex flex-col gap-3">
+                <Label
+                  htmlFor="password"
+                  className="block text-sm"
+                >
                   Mật khẩu
-                </label>
-
+                </Label>
                 <Input
                   type="password"
                   id="password"
-                  placeholder="••••••••"
-                  className="h-11 rounded-xl border-border/50 bg-background/50"
                   {...register("password")}
                 />
-
                 {errors.password && (
-                <p className="text-destructive text-sm">
-                  {errors.password.message}
-                </p>
+                  <p className="error-message">{errors.password.message}</p>
                 )}
-
               </div>
 
-              {/* Submit */}
-              <Button 
-              type = "submit"
-              className="h-11 w-full rounded-xl bg-gradient-primary text-sm font-semibold hover:opacity-90"
-              disabled={isSubmitting}
+              {/* nút đăng ký */}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
               >
                 Tạo tài khoản
               </Button>
 
-              {/* Login */}
-              <p className="text-center text-sm text-muted-foreground">
+              <div className="text-center text-sm">
                 Đã có tài khoản?{" "}
                 <a
                   href="/signin"
-                  className="font-medium text-primary hover:underline"
+                  className="underline underline-offset-4"
                 >
                   Đăng nhập
                 </a>
-              </p>
-            </form>
-          </div>
-
-          {/* RIGHT */}
-          <div className="relative hidden lg:flex items-center justify-center overflow-hidden bg-gradient-primary">
-
-            <div className="absolute inset-0 bg-black/10" />
-
-            <div className="relative z-10 max-w-md px-10 text-white">
-              <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur">
-                <span className="text-3xl font-bold">P</span>
               </div>
-
-              <h2 className="text-4xl font-bold leading-tight">
-                Welcome to Pulse
-              </h2>
-
-              <p className="mt-5 text-lg text-white/80">
-                Modern messaging platform with beautiful UI and realtime chat experience.
-              </p>
             </div>
-
-            <div className="absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-pink-400/20 blur-3xl" />
+          </form>
+          <div className="bg-muted relative hidden md:block">
+            <img
+              src="/placeholderSignUp.png"
+              alt="Image"
+              className="absolute top-1/2 -translate-y-1/2 object-cover"
+            />
           </div>
         </CardContent>
       </Card>
+      <div className=" text-xs text-balance px-6 text-center *:[a]:hover:text-primary text-muted-foreground *:[a]:underline *:[a]:underline-offetset-4">
+        Bằng cách tiếp tục, bạn đồng ý với <a href="#">Điều khoản dịch vụ</a> và{" "}
+        <a href="#">Chính sách bảo mật</a> của chúng tôi.
+      </div>
     </div>
-  )
+  );
 }
