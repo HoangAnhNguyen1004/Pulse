@@ -1,2 +1,16 @@
+# Environment files and secrets
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies and generated output
 node_modules/
-.env
+**/node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
